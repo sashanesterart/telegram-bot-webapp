@@ -177,6 +177,7 @@
         }
 
         // --- Обработка нажатия кнопки "Загрузить" ---
+         // --- Обработка нажатия кнопки "Загрузить" ---
         uploadButton.addEventListener('click', async () => {
             if (selectedFiles.length === 0) {
                 statusMessage.textContent = "Пожалуйста, выберите файлы для загрузки.";
@@ -193,12 +194,18 @@
                 formData.append('files', file); // Добавляем каждый файл в FormData под именем 'files'
             });
 
-            try {
-                // ВАЖНО: Замени этот URL на URL твоего сервера, где будет работать обработчик!
-                // Например: 'https://твой-сервер.com/upload_files'
-                const uploadUrl = 'https://sashanesterart.github.io/telegram-bot-webapp/upload_files'; // <-- ЗАМЕНИ ЭТОТ URL!
+            // Получаем chat_id из параметров Web App (если есть)
+            const chatId = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp.initDataUnsafe?.user?.id : null;
+            if (chatId) {
+                formData.append('chat_id', chatId); // Добавляем chat_id к форме
+            }
 
-                // Отправляем файлы на сервер
+            const uploadUrl = 'https://sashanesterart.github.io/telegram-bot-webapp/upload_files';
+            console.log('Попытка отправки на URL:', uploadUrl);
+
+            // Закомментируйте весь блок try...catch
+            /*
+            try {
                 const response = await fetch(uploadUrl, {
                     method: 'POST', // Метод отправки данных
                     body: formData // Данные для отправки
@@ -225,7 +232,5 @@
                 selectedFiles = []; // Очищаем список выбранных файлов
                 displaySelectedFiles(); // Обновляем отображение
             }
+            */
         });
-    </script>
-</body>
-</html>
