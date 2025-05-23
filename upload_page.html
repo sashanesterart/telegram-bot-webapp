@@ -16,7 +16,6 @@
             min-height: 100vh;
             margin: 0;
         }
-
         .container {
             background-color: #ffffff;
             padding: 2.5rem;
@@ -26,7 +25,6 @@
             max-width: 90%;
             width: 500px;
         }
-
         .file-input-label {
             display: block;
             background-color: #4CAF50;
@@ -39,15 +37,12 @@
             margin-top: 1.5rem;
             margin-bottom: 1rem;
         }
-
         .file-input-label:hover {
             background-color: #45a049;
         }
-
         #fileInput {
             display: none;
         }
-
         .file-list {
             margin-top: 1.5rem;
             text-align: left;
@@ -58,16 +53,13 @@
             padding: 0.75rem;
             background-color: #f9f9f9;
         }
-
         .file-list div {
             padding: 0.5rem 0;
             border-bottom: 1px dashed #e0e0e0;
         }
-
         .file-list div:last-child {
             border-bottom: none;
         }
-
         .upload-button {
             background-color: #007bff;
             color: white;
@@ -80,294 +72,20 @@
             width: 100%;
             border: none;
         }
-
         .upload-button:hover {
             background-color: #0056b3;
         }
-
         .upload-button:disabled {
             background-color: #6c757d;
             cursor: not-allowed;
         }
-
         .message {
             margin-top: 1rem;
             font-size: 0.9rem;
             color: #333;
         }
-
         .message.error {
             color: #dc3545;
         }
-
         .message.success {
-            color: #28a745;
-        }
-
-        .loading-spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-top: 4px solid #007bff;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-            margin: 1rem auto;
-            display: none;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .hidden {
-            display: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1 class="text-2xl font-bold text-gray-800 mb-4">Загрузка файлов для ключевания</h1>
-        <p class="text-gray-600 mb-6">Выберите одну или несколько фотографий для обработки.</p>
-        
-        <input type="file" id="fileInput" multiple accept="image/*">
-        <label for="fileInput" class="file-input-label">
-            Выбрать файлы
-        </label>
-        
-        <div id="fileList" class="file-list hidden"></div>
-        <p id="fileCount" class="text-gray-500 text-sm mt-2 hidden"></p>
-        
-        <button id="uploadButton" class="upload-button hidden">
-            Загрузить выбранные файлы
-        </button>
-        
-        <div id="loadingSpinner" class="loading-spinner"></div>
-        <p id="statusMessage" class="message"></p>
-    </div>
-
-    <script>
-        // Получаем ссылки на элементы страницы
-        const fileInput = document.getElementById('fileInput');
-        const fileListDiv = document.getElementById('fileList');
-        const fileCountParagraph = document.getElementById('fileCount');
-        const uploadButton = document.getElementById('uploadButton');
-        const statusMessage = document.getElementById('statusMessage');
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        
-        let selectedFiles = [];
-
-        // Инициализация Telegram Web App
-        function initializeTelegramWebApp() {
-            if (window.Telegram && window.Telegram.WebApp) {
-                window.Telegram.WebApp.ready();
-                window.Telegram.WebApp.expand();
-                
-                // Настраиваем тему приложения
-                if (window.Telegram.WebApp.colorScheme === 'dark') {
-                    document.body.style.backgroundColor = '#1a1a1a';
-                    document.querySelector('.container').style.backgroundColor = '#2a2a2a';
-                    document.querySelector('.container').style.color = '#ffffff';
-                }
-                
-                console.log('Telegram Web App инициализирован');
-                return true;
-            } else {
-                console.warn('Telegram Web App API недоступен');
-                statusMessage.textContent = "Это приложение предназначено для запуска в Telegram Web App.";
-                statusMessage.className = "message error";
-                return false;
-            }
-        }
-
-        // Инициализируем приложение
-        const isTelegramWebApp = initializeTelegramWebApp();
-
-        // Обработка выбора файлов
-        fileInput.addEventListener('change', (event) => {
-            selectedFiles = Array.from(event.target.files);
-            
-            // Проверяем размер файлов (максимум 20MB на файл)
-            const maxFileSize = 20 * 1024 * 1024; // 20MB
-            const validFiles = selectedFiles.filter(file => {
-                if (file.size > maxFileSize) {
-                    console.warn(`Файл ${file.name} слишком большой: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
-                    return false;
-                }
-                return true;
-            });
-
-            if (validFiles.length !== selectedFiles.length) {
-                statusMessage.textContent = `Некоторые файлы были исключены (размер больше 20MB)`;
-                statusMessage.className = "message error";
-            }
-
-            selectedFiles = validFiles;
-            displaySelectedFiles();
-            updateUploadButtonVisibility();
-        });
-
-        // Функция для отображения списка выбранных файлов
-        function displaySelectedFiles() {
-            fileListDiv.innerHTML = '';
-            
-            if (selectedFiles.length > 0) {
-                fileListDiv.classList.remove('hidden');
-                
-                selectedFiles.forEach(file => {
-                    const div = document.createElement('div');
-                    const fileSize = (file.size / 1024 / 1024).toFixed(2);
-                    div.textContent = `${file.name} (${fileSize} MB)`;
-                    fileListDiv.appendChild(div);
-                });
-                
-                fileCountParagraph.textContent = `Выбрано файлов: ${selectedFiles.length}`;
-                fileCountParagraph.classList.remove('hidden');
-            } else {
-                fileListDiv.classList.add('hidden');
-                fileCountParagraph.classList.add('hidden');
-            }
-        }
-
-        // Функция для показа/скрытия кнопки "Загрузить"
-        function updateUploadButtonVisibility() {
-            if (selectedFiles.length > 0) {
-                uploadButton.classList.remove('hidden');
-            } else {
-                uploadButton.classList.add('hidden');
-            }
-        }
-
-        // Функция для получения chat_id
-        function getChatId() {
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-                return window.Telegram.WebApp.initDataUnsafe.user?.id || 
-                       window.Telegram.WebApp.initDataUnsafe.chat?.id;
-            }
-            return null;
-        }
-
-        // Обработка нажатия кнопки "Загрузить"
-        uploadButton.addEventListener('click', async () => {
-            if (selectedFiles.length === 0) {
-                statusMessage.textContent = "Пожалуйста, выберите файлы для загрузки.";
-                statusMessage.className = "message error";
-                return;
-            }
-
-            // Проверяем доступность Telegram Web App
-            if (!isTelegramWebApp) {
-                statusMessage.textContent = "Приложение должно запускаться в Telegram";
-                statusMessage.className = "message error";
-                return;
-            }
-
-            setLoadingState(true);
-            statusMessage.textContent = "Загрузка файлов...";
-            statusMessage.className = "message";
-
-            const formData = new FormData();
-            
-            selectedFiles.forEach((file, index) => {
-                formData.append('files', file);
-            });
-
-            // Получаем chat_id
-            const chatId = getChatId();
-            if (chatId) {
-                formData.append('chat_id', chatId);
-                console.log('Chat ID:', chatId);
-            } else {
-                console.warn('Chat ID не найден');
-            }
-
-            // Добавляем дополнительные данные из Telegram
-            if (window.Telegram && window.Telegram.WebApp.initData) {
-                formData.append('init_data', window.Telegram.WebApp.initData);
-            }
-
-            // Замените на ваш реальный URL сервера
-            const uploadUrl = 'https://1dae-185-115-4-251.ngrok-free.app/upload_files';
-            
-            console.log('Отправка файлов на:', uploadUrl);
-
-            try {
-                const response = await fetch(uploadUrl, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        // Убираем Content-Type, браузер сам установит правильный для FormData
-                        'ngrok-skip-browser-warning': 'true' // Для ngrok
-                    }
-                });
-
-                console.log('Ответ от сервера:', response.status, response.statusText);
-
-                if (response.ok) {
-                    const result = await response.json();
-                    statusMessage.textContent = `Успешно загружено! ${result.message || 'Файлы обрабатываются...'}`;
-                    statusMessage.className = "message success";
-                    
-                    // Очищаем форму после успешной загрузки
-                    selectedFiles = [];
-                    fileInput.value = '';
-                    displaySelectedFiles();
-                    updateUploadButtonVisibility();
-                    
-                    // Можно закрыть Web App после успешной загрузки
-                    // setTimeout(() => {
-                    //     if (window.Telegram && window.Telegram.WebApp) {
-                    //         window.Telegram.WebApp.close();
-                    //     }
-                    // }, 2000);
-                    
-                } else {
-                    const errorText = await response.text();
-                    console.error('Ошибка от сервера:', errorText);
-                    statusMessage.textContent = `Ошибка загрузки: ${response.status} - ${errorText}`;
-                    statusMessage.className = "message error";
-                }
-            } catch (error) {
-                console.error('Ошибка при отправке файлов:', error);
-                statusMessage.textContent = `Произошла ошибка сети: ${error.message}`;
-                statusMessage.className = "message error";
-            } finally {
-                setLoadingState(false);
-            }
-        });
-
-        // Функция для управления состоянием загрузки
-        function setLoadingState(isLoading) {
-            if (isLoading) {
-                loadingSpinner.style.display = 'block';
-                uploadButton.disabled = true;
-                fileInput.disabled = true;
-                uploadButton.textContent = 'Загрузка...';
-            } else {
-                loadingSpinner.style.display = 'none';
-                uploadButton.disabled = false;
-                fileInput.disabled = false;
-                uploadButton.textContent = 'Загрузить выбранные файлы';
-            }
-        }
-
-        // Обработка ошибок JavaScript
-        window.addEventListener('error', (event) => {
-            console.error('JavaScript ошибка:', event.error);
-            statusMessage.textContent = `Произошла ошибка: ${event.error.message}`;
-            statusMessage.className = "message error";
-            setLoadingState(false);
-        });
-
-        // Дополнительная отладочная информация
-        console.log('Приложение загружено');
-        console.log('Telegram WebApp доступен:', !!window.Telegram?.WebApp);
-        
-        if (window.Telegram?.WebApp) {
-            console.log('WebApp version:', window.Telegram.WebApp.version);
-            console.log('WebApp platform:', window.Telegram.WebApp.platform);
-        }
-    </script>
-</body>
-</html>
-
+  
