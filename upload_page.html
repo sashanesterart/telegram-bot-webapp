@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Загрузка файлов для бота</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Секция CSS: Здесь мы "одеваем" нашу страницу */
+        body {
+            font-family: 'Inter', sans-serif; /* Выбираем шрифт */
+            background-color: #f0f2f5; /* Цвет фона страницы */
+            display: flex; /* Используем flexbox для центрирования содержимого */
+            justify-content: center; /* Центрируем по горизонтали */
+            align-items: center; /* Центрируем по вертикали */
+            min-height: 100vh; /* Минимальная высота страницы - весь экран */
+            margin: 0; /* Убираем стандартные отступы */
+        }
+        .container {
+            background-color: #ffffff; /* Белый фон для основного блока */
+            padding: 2.5rem; /* Отступы внутри блока */
+            border-radius: 1.5rem; /* Закругленные углы блока */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Тень для блока */
+            text-align: center; /* Выравнивание текста по центру */
+            max-width: 90%; /* Максимальная ширина блока 90% от экрана */
+            width: 500px; /* Фиксированная ширина блока */
+        }
+        .file-input-label {
+            display: block; /* Делаем элемент блочным */
+            background-color: #4CAF50; /* Зеленый цвет кнопки */
+            color: white; /* Белый текст */
+            padding: 1rem 2rem; /* Отступы внутри кнопки */
+            border-radius: 0.75rem; /* Закругленные углы кнопки */
+            cursor: pointer; /* Курсор в виде указателя при наведении */
+            transition: background-color 0.3s ease; /* Плавная смена цвета при наведении */
+            font-weight: 600; /* Жирный шрифт */
+            margin-top: 1.5rem; /* Отступ сверху */
+            margin-bottom: 1rem; /* Отступ снизу */
+        }
+        .file-input-label:hover {
+            background-color: #45a049; /* Изменение цвета при наведении */
+        }
+        #fileInput {
+            display: none; /* СКРЫВАЕМ СТАНДАРТНЫЙ ИНПУТ ФАЙЛОВ! Мы будем использовать нашу красивую кнопку. */
+        }
+        .file-list {
+            margin-top: 1.5rem; /* Отступ сверху */
+            text-align: left; /* Выравнивание текста списка файлов по левому краю */
+            max-height: 200px; /* Максимальная высота списка */
+            overflow-y: auto; /* Добавляем прокрутку, если файлов много */
+            border: 1px solid #e0e0e0; /* Тонкая рамка */
+            border-radius: 0.5rem; /* Закругленные углы рамки */
+            padding: 0.75rem; /* Отступы внутри списка */
+            background-color: #f9f9f9; /* Светлый фон списка */
+        }
+        .file-list div {
+            padding: 0.5rem 0; /* Отступы для каждого элемента списка */
+            border-bottom: 1px dashed #e0e0e0; /* Пунктирная линия между файлами */
+        }
+        .file-list div:last-child {
+            border-bottom: none; /* Убираем линию у последнего элемента */
+        }
+        .upload-button {
+            background-color: #007bff; /* Синяя кнопка */
+            color: white; /* Белый текст */
+            padding: 1rem 2rem; /* Отступы внутри кнопки */
+            border-radius: 0.75rem; /* Закругленные углы кнопки */
+            cursor: pointer; /* Курсор в виде указателя */
+            transition: background-color 0.3s ease; /* Плавная смена цвета */
+            font-weight: 600; /* Жирный шрифт */
+            margin-top: 1.5rem; /* Отступ сверху */
+            width: 100%; /* Ширина кнопки на всю ширину родителя */
+            border: none; /* Убираем стандартную рамку */
+        }
+        .upload-button:hover {
+            background-color: #0056b3; /* Изменение цвета при наведении */
+        }
+        .message {
+            margin-top: 1rem; /* Отступ сверху */
+            font-size: 0.9rem; /* Размер шрифта */
+            color: #333; /* Цвет текста */
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1); /* Прозрачная рамка */
+            border-top: 4px solid #007bff; /* Синяя верхняя часть (для эффекта вращения) */
+            border-radius: 50%; /* Делаем круг */
+            width: 24px; /* Ширина */
+            height: 24px; /* Высота */
+            animation: spin 1s linear infinite; /* Анимация вращения */
+            margin: 1rem auto; /* Центрируем */
+            display: none; /* СКРЫТ ПО УМОЛЧАНИЮ */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); } /* Начало вращения */
+            100% { transform: rotate(360deg); } /* Конец вращения */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-2xl font-bold text-gray-800 mb-4">Загрузка файлов для ключевания</h1>
+        <p class="text-gray-600 mb-6">Выберите одну или несколько фотографий для обработки.</p>
+
+        <input type="file" id="fileInput" multiple accept="image/*">
+        <label for="fileInput" class="file-input-label">
+            Выбрать файлы
+        </label>
+
+        <div id="fileList" class="file-list hidden"></div>
+        <p id="fileCount" class="text-gray-500 text-sm mt-2 hidden"></p>
+
+        <button id="uploadButton" class="upload-button hidden">
+            Загрузить выбранные файлы
+        </button>
+
+        <div id="loadingSpinner" class="loading-spinner"></div>
+        <p id="statusMessage" class="message"></p>
+    </div>
+
+    <script>
+        /* Секция JavaScript: Здесь мы добавляем "мозг" нашей странице */
+
+        // Получаем ссылки на элементы страницы, чтобы управлять ими
+        const fileInput = document.getElementById('fileInput');
+        const fileListDiv = document.getElementById('fileList');
+        const fileCountParagraph = document.getElementById('fileCount');
+        const uploadButton = document.getElementById('uploadButton');
+        const statusMessage = document.getElementById('statusMessage');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+
+        let selectedFiles = []; // Массив для хранения выбранных файлов
+
+        // --- Взаимодействие с Telegram Web App API ---
+        // Это очень важная часть! Telegram предоставляет специальный объект `window.Telegram.WebApp`
+        // который позволяет веб-странице общаться с Telegram.
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready(); // Говорим Telegram, что страница готова
+            // window.Telegram.WebApp.expand(); // Можно использовать, чтобы Web App развернулся на весь экран
+        } else {
+            statusMessage.textContent = "Это приложение предназначено для запуска в Telegram Web App.";
+            // Для тестирования вне Telegram, можно добавить заглушки
+            // window.Telegram = { WebApp: { sendData: (data) => console.log("Sending data (mock):", data) } };
+        }
+
+        // --- Обработка выбора файлов ---
+        fileInput.addEventListener('change', (event) => {
+            selectedFiles = Array.from(event.target.files); // Получаем выбранные файлы
+            displaySelectedFiles(); // Отображаем их список
+            updateUploadButtonVisibility(); // Показываем кнопку "Загрузить"
+        });
+
+        // Функция для отображения списка выбранных файлов
+        function displaySelectedFiles() {
+            fileListDiv.innerHTML = ''; // Очищаем предыдущий список
+            if (selectedFiles.length > 0) {
+                fileListDiv.classList.remove('hidden'); // Показываем блок списка
+                selectedFiles.forEach(file => {
+                    const div = document.createElement('div');
+                    div.textContent = file.name; // Отображаем имя файла
+                    fileListDiv.appendChild(div);
+                });
+                fileCountParagraph.textContent = `Выбрано файлов: ${selectedFiles.length}`; // Обновляем счетчик
+                fileCountParagraph.classList.remove('hidden'); // Показываем счетчик
+            } else {
+                fileListDiv.classList.add('hidden'); // Скрываем блок списка
+                fileCountParagraph.classList.add('hidden'); // Скрываем счетчик
+            }
+        }
+
+        // Функция для показа/скрытия кнопки "Загрузить"
+        function updateUploadButtonVisibility() {
+            if (selectedFiles.length > 0) {
+                uploadButton.classList.remove('hidden');
+            } else {
+                uploadButton.classList.add('hidden');
+            }
+        }
+
+        // --- Обработка нажатия кнопки "Загрузить" ---
+        uploadButton.addEventListener('click', async () => {
+            if (selectedFiles.length === 0) {
+                statusMessage.textContent = "Пожалуйста, выберите файлы для загрузки.";
+                return;
+            }
+
+            statusMessage.textContent = "Загрузка файлов...";
+            loadingSpinner.style.display = 'block'; // Показываем спиннер
+            uploadButton.disabled = true; // Отключаем кнопку
+            fileInput.disabled = true; // Отключаем выбор файлов
+
+            const formData = new FormData(); // Создаем объект для отправки файлов на сервер
+            selectedFiles.forEach(file => {
+                formData.append('files', file); // Добавляем каждый файл в FormData под именем 'files'
+            });
+
+            try {
+                // ВАЖНО: Замени этот URL на URL твоего сервера, где будет работать обработчик!
+                // Например: 'https://твой-сервер.com/upload_files'
+                const uploadUrl = 'https://your-server.com/upload_files'; // <-- ЗАМЕНИ ЭТОТ URL!
+
+                // Отправляем файлы на сервер
+                const response = await fetch(uploadUrl, {
+                    method: 'POST', // Метод отправки данных
+                    body: formData // Данные для отправки
+                });
+
+                if (response.ok) { // Если ответ от сервера успешный (код 200)
+                    const result = await response.json(); // Парсим ответ как JSON
+                    statusMessage.textContent = `Успешно загружено! Ответ от бота: ${result.message || 'Нет сообщения'}`;
+                    // Если нужно закрыть Web App после успешной загрузки:
+                    if (window.Telegram && window.Telegram.WebApp) {
+                        window.Telegram.WebApp.close(); // Закрываем Web App
+                    }
+                } else { // Если произошла ошибка на сервере
+                    const errorText = await response.text();
+                    statusMessage.textContent = `Ошибка загрузки: ${response.status} - ${errorText}`;
+                }
+            } catch (error) { // Если произошла ошибка сети
+                console.error('Ошибка при отправке файлов:', error);
+                statusMessage.textContent = `Произошла ошибка сети: ${error.message}`;
+            } finally {
+                loadingSpinner.style.display = 'none'; // Скрываем спиннер
+                uploadButton.disabled = false; // Включаем кнопку
+                fileInput.disabled = false; // Включаем выбор файлов
+                selectedFiles = []; // Очищаем список выбранных файлов
+                displaySelectedFiles(); // Обновляем отображение
+            }
+        });
+    </script>
+</body>
+</html>
